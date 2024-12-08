@@ -221,5 +221,11 @@ if MAIN_FLOW:
         if st.session_state.current_num_prompts == st.session_state.num_prompts:
             st.session_state.is_last = True
             st.write("The story is complete!")
+            st.write("Want another story?")
+            st.button("Yes.")
+            if st.button("No"):
+                st.write("Thanks for writing a story today!")
+            else:
+                st.session_state.clear()
         elif st.session_state.current_num_prompts >= 2:
             st.button("Continue to the next prompt?")
