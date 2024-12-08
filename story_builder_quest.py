@@ -57,6 +57,12 @@ def fetch_wikipedia_research(topic):
     wiki = WikipediaAPIWrapper()
     return wiki.run(topic)
 
+# Cache for the total number of prompts required
+@st.cache_data
+def fetch_num_prompts(length, time_per_prompt):
+    ''' Function to define the total number of prompts needed for the story.'''
+    return round(int(length) / time_per_prompt, 0)
+
 
 
 from langchain.prompts import PromptTemplate
@@ -85,13 +91,14 @@ continuing_of_story_template = PromptTemplate(
     input_variables=['title', 'wikipedia_research', 'age', 'beginning_of_story', 'decision', 'is_last'], 
     template=(
         "Continue the story about the topic: {title}, written for a child aged {age}. "
-        "Build directly on the story so far: {beginning_of_story}, ensuring continuity with the existing characters, setting, and events. "
-        "Incorporate the decision made by the user, which was: {decision}, and develop the narrative based on this choice. "
-        "Use relevant details from the Wikipedia research: {wikipedia_research} to enrich the story, making it both engaging and educational. "
-        "Do not introduce entirely new characters, settings, or plot elements unless they logically follow from the story's current state. "
-        "If {is_last} is True, resolve the story in a satisfying and age-appropriate way that reflects the user's decision. "
-        "If {is_last} is False, stop the story just before a major decision point that will decide how the story progresses and onclude by presenting the decision point clearly, but do not proceed with the resolution or outcome."
-        "Ensure that the output is only 3-5 sentences long."
+        "Build directly on the story so far: {beginning_of_story}, maintaining consistency with the existing characters, setting, and events. "
+        "Incorporate the decision made by the user: {decision}, and develop the narrative to reflect the consequences of this choice in an engaging and meaningful way. "
+        "Use relevant details from the Wikipedia research: {wikipedia_research} to make the story imaginative, educational, and rich with detail. "
+        "Avoid introducing entirely new characters, settings, or plot elements unless they naturally follow from the current story. "
+        "If {is_last} is True, bring the story to a satisfying and age-appropriate conclusion, fully resolving the narrative while reflecting the user's decision. "
+        "If {is_last} is False, end the segment just before a pivotal moment that leaves the characters facing a clear choice or challenge. "
+        "Conclude by explicitly presenting the user with two or three options for what could happen next, phrased as a decision point for the user to choose how the story continues. "
+        "The output should be concise, limited to 3-5 sentences, while maintaining an engaging and immersive tone."
     )
 )
 
@@ -170,7 +177,7 @@ if MAIN_FLOW:
     # Generate the beginning of the story
     if st.session_state.step == 0 and st.session_state.topic and st.session_state.age and st.session_state.name and st.session_state.length:
         ### set up the number of prompts
-        st.session_state.num_prompts = round(ord(st.session_state.length) / TIME_PER_PROMPT, 0)
+        st.session_state.num_prompts = fetch_num_prompts(length = st.session_state.length, time_per_prompt= TIME_PER_PROMPT )
         intro = generate_story_segment(
             topic=st.session_state.topic,
             age=st.session_state.age,
@@ -182,13 +189,16 @@ if MAIN_FLOW:
         st.session_state.step += 1
         st.write(" ".join(st.session_state.story))
 
-    while not st.session_state.is_last and st.session_state.step > 0:
-        # Provide a decision point
+    if not st.session_state.is_last and st.session_state.step > 0:
+
         st.subheader("What happens next?")
         decision = st.text_input("What happens next?", key=f"response_{st.session_state.step}")
         st.session_state.current_decision = decision
         st.session_state.show_input = False
-        st.session_state.step += 1
+        
+        if st.session_state.current_num_prompts > 1:
+            st.session_state.current_decision = decision
+
         # Handle the user's decision
         if st.session_state.current_decision == '':
             st.write("Please make a decision to continue the story.")
@@ -205,7 +215,11 @@ if MAIN_FLOW:
             st.session_state.story.append(next_segment)
             st.session_state.current_decision = decision
             st.session_state.current_num_prompts += 1
+            st.session_state.step += 1
             st.write(" ".join(st.session_state.story))
-        
+   
         if st.session_state.current_num_prompts == st.session_state.num_prompts:
             st.session_state.is_last = True
+            st.write("The story is complete!")
+        elif st.session_state.current_num_prompts >= 2:
+            st.button("Continue to the next prompt?")
