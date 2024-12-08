@@ -189,7 +189,7 @@ if MAIN_FLOW:
         st.session_state.step += 1
         st.write(" ".join(st.session_state.story))
 
-    if not st.session_state.is_last and st.session_state.step > 0:
+    if st.session_state.current_num_prompts <= st.session_state.num_prompts and st.session_state.step > 0:
 
         st.subheader("What happens next?")
         decision = st.text_input("What happens next?", key=f"response_{st.session_state.step}")
@@ -218,8 +218,10 @@ if MAIN_FLOW:
             st.session_state.step += 1
             st.write(" ".join(st.session_state.story))
    
-        if st.session_state.current_num_prompts == st.session_state.num_prompts:
+        if st.session_state.current_num_prompts == st.session_state.num_prompts - 1:
             st.session_state.is_last = True
+            st.button("Continue to the next prompt?")
+        elif st.session_state.current_num_prompts == st.session_state.num_prompts:
             st.write("The story is complete!")
             st.write("Want another story?")
             st.button("Yes.")
