@@ -203,6 +203,7 @@ if MAIN_FLOW:
         if st.session_state.current_decision == '':
             st.write("Please make a decision to continue the story.")
         else:
+            st.write(st.session_state.is_last)
             next_segment = generate_story_segment(
                 topic=st.session_state.topic,
                 age=st.session_state.age,
