@@ -97,7 +97,6 @@ continuing_of_story_template = PromptTemplate(
         "Avoid introducing entirely new characters, settings, or plot elements unless they naturally follow from the current story. "
         "If {is_last} is True, bring the story to a satisfying and age-appropriate conclusion, fully resolving the narrative while reflecting the user's decision. "
         "If {is_last} is False, end the segment just before a pivotal moment that leaves the characters facing a clear choice or challenge. "
-        "Conclude by explicitly presenting the user with two or three options for what could happen next, phrased as a decision point for the user to choose how the story continues. "
         "The output should be concise, limited to 3-5 sentences, while maintaining an engaging and immersive tone."
     )
 )
