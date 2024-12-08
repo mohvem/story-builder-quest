@@ -161,16 +161,14 @@ if MAIN_FLOW:
     # n_prompts = round(ord(story_length_input) / TIME_PER_PROMPT, 0)
 
     ### set up the wikipedia API reader
-    print(st.session_state.topic)
-    wikipedia_research = fetch_wikipedia_research(st.session_state.topic)
-    title = chainT.run(st.session_state.topic)
+        title = chainT.run(st.session_state.topic)
 
     # Generate the beginning of the story
     if st.session_state.step == 0:
         intro = generate_story_segment(
             topic=st.session_state.topic,
             age=st.session_state.age,
-            wikipedia_research=wikipedia_research
+            wikipedia_research=fetch_wikipedia_research(st.session_state.topic)
             , name = st.session_state.name
         )
         st.session_state.story.append(intro)
@@ -192,7 +190,7 @@ if MAIN_FLOW:
             topic=st.session_state.topic,
             age=st.session_state.age,
             decision=decision,
-            wikipedia_research=wikipedia_research,
+            wikipedia_research=fetch_wikipedia_research(st.session_state.topic),
             current_story= " ".join(st.session_state.story),
             length=st.session_state.length
             , name = st.session_state.name
@@ -201,6 +199,3 @@ if MAIN_FLOW:
         st.session_state.step += 1
         st.session_state.current_decision = decision
         st.write(" ".join(st.session_state.story))
-
-    with st.expander('Wikipedia-based exploration:'):
-        st.info(wikipedia_research)
