@@ -33,15 +33,22 @@ if "step" not in st.session_state:
 if "show_input" not in st.session_state:
     st.session_state["show_input"] = True
 if "topic" not in st.session_state:
-    st.session_state["topic"] = 'nothing'
+    st.session_state["topic"] = None
 if "age" not in st.session_state:
-    st.session_state["age"] = 0
+    st.session_state["age"] = None
 if "name" not in st.session_state:
-    st.session_state["name"] = 'nothing'
+    st.session_state["name"] = None
 if "age" not in st.session_state:
-    st.session_state["age"] = 0
+    st.session_state["age"] = None
 if "length" not in st.session_state:
-    st.session_state["length"] = 2
+    st.session_state["length"] = None
+if "num_prompts" not in st.session_state:
+    st.session_state["num_prompts"] = 0
+if "is_last" not in st.session_state:
+    st.session_state["is_last"] = False
+if "current_num_prompts" not in st.session_state:
+    st.session_state["current_num_prompts"] = 1
+
 
 # Cache for loading Wikipedia
 @st.cache_data
@@ -75,16 +82,16 @@ beginning_of_story_template = PromptTemplate(
 )
 
 continuing_of_story_template = PromptTemplate(
-    input_variables=['title', 'wikipedia_research', 'age', 'beginning_of_story', 'decision', 'story_length'], 
+    input_variables=['title', 'wikipedia_research', 'age', 'beginning_of_story', 'decision', 'is_last'], 
     template=(
         "Continue the story about the topic: {title}, written for a child aged {age}. "
         "Build directly on the story so far: {beginning_of_story}, ensuring continuity with the existing characters, setting, and events. "
         "Incorporate the decision made by the user, which was: {decision}, and develop the narrative based on this choice. "
         "Use relevant details from the Wikipedia research: {wikipedia_research} to enrich the story, making it both engaging and educational. "
         "Do not introduce entirely new characters, settings, or plot elements unless they logically follow from the story's current state. "
-        "Focus on resolving the story in a satisfying and age-appropriate way that reflects the user's decision. "
+        "If {is_last} is True, resolve the story in a satisfying and age-appropriate way that reflects the user's decision. "
+        "If {is_last} is False, stop the story just before a major decision point that will decide how the story progresses and onclude by presenting the decision point clearly, but do not proceed with the resolution or outcome."
         "Ensure that the output is only 3-5 sentences long."
-        # "Ensure the final segment aligns with the specified total duration of approximately {story_length} minutes, including the prior content."
     )
 )
 
@@ -110,7 +117,7 @@ chainCOS = LLMChain(llm=model, prompt=continuing_of_story_template, verbose=True
 from langchain_community.utilities import WikipediaAPIWrapper
 
 # Define function to generate the next portion of the story
-def generate_story_segment(topic, age, name, wikipedia_research, decision=None, current_story=None, length=None):
+def generate_story_segment(topic, age, name, is_last, wikipedia_research, decision=None, current_story=None):
     """
     Generate the next segment of the story using a call to OpenAI and the Wikipedia API.
 
@@ -138,10 +145,11 @@ def generate_story_segment(topic, age, name, wikipedia_research, decision=None, 
         title=topic,
         wikipedia_research=wikipedia_research,
         beginning_of_story=current_story,
-        story_length=length
+        is_last = is_last
     )
 
 MAIN_FLOW = True
+TIME_PER_PROMPT = 2
 # Main workflow
 if MAIN_FLOW:
 
@@ -156,46 +164,48 @@ if MAIN_FLOW:
         st.session_state.name = name_of_child
         st.session_state.topic = topic_input
 
-    ### set up the number of prompts
-    # TIME_PER_PROMPT = 3
-    # n_prompts = round(ord(story_length_input) / TIME_PER_PROMPT, 0)
-
     ### set up the wikipedia API reader
         title = chainT.run(st.session_state.topic)
 
     # Generate the beginning of the story
-    if st.session_state.step == 0:
+    if st.session_state.step == 0 and st.session_state.topic and st.session_state.age and st.session_state.name and st.session_state.length:
+        ### set up the number of prompts
+        st.session_state.num_prompts = round(ord(st.session_state.length) / TIME_PER_PROMPT, 0)
         intro = generate_story_segment(
             topic=st.session_state.topic,
             age=st.session_state.age,
             wikipedia_research=fetch_wikipedia_research(st.session_state.topic)
             , name = st.session_state.name
+            , is_last= st.session_state.is_last
         )
         st.session_state.story.append(intro)
         st.session_state.step += 1
         st.write(" ".join(st.session_state.story))
 
-    # Provide a decision point
+    while not st.session_state.is_last and st.session_state.step > 0:
+        # Provide a decision point
         st.subheader("What happens next?")
-
-    decision = st.text_input("What happens next?")
-    st.session_state.current_decision = decision
-    st.session_state.show_input = False
-
-    # Handle the user's decision
-    if st.session_state.current_decision == '':
-        st.write("Please make a decision to continue the story.")
-    else:
-        next_segment = generate_story_segment(
-            topic=st.session_state.topic,
-            age=st.session_state.age,
-            decision=decision,
-            wikipedia_research=fetch_wikipedia_research(st.session_state.topic),
-            current_story= " ".join(st.session_state.story),
-            length=st.session_state.length
-            , name = st.session_state.name
-        )
-        st.session_state.story.append(next_segment)
-        st.session_state.step += 1
+        decision = st.text_input("What happens next?", key=f"response_{st.session_state.step}")
         st.session_state.current_decision = decision
-        st.write(" ".join(st.session_state.story))
+        st.session_state.show_input = False
+        st.session_state.step += 1
+        # Handle the user's decision
+        if st.session_state.current_decision == '':
+            st.write("Please make a decision to continue the story.")
+        else:
+            next_segment = generate_story_segment(
+                topic=st.session_state.topic,
+                age=st.session_state.age,
+                decision=decision,
+                wikipedia_research=fetch_wikipedia_research(st.session_state.topic),
+                current_story= " ".join(st.session_state.story)
+                , name = st.session_state.name
+                , is_last = st.session_state.is_last
+            )
+            st.session_state.story.append(next_segment)
+            st.session_state.current_decision = decision
+            st.session_state.current_num_prompts += 1
+            st.write(" ".join(st.session_state.story))
+        
+        if st.session_state.current_num_prompts == st.session_state.num_prompts:
+            st.session_state.is_last = True
