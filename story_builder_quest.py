@@ -184,7 +184,7 @@ memoryS = ConversationBufferMemory(input_key='title', memory_key='chat_history')
 from langchain_openai import ChatOpenAI
 
 # Importing the large language model OpenAI via LangChain
-model = ChatOpenAI(model='gpt-3.5-turbo-16k', temperature=0.7)
+model = ChatOpenAI(model='gpt-3.5-turbo-16k', temperature=0.8)
 
 from langchain.chains import LLMChain
 
