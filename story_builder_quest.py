@@ -25,7 +25,24 @@ st.markdown(
         padding: 5px;             /* Padding inside the box */
         border-radius: 5px;       /* Rounded corners */
     }
+
+       /* Style for Buttons */
+    div.stButton > button {
+        background-color: #1db954; /* Green background */
+        color: white;              /* White text */
+        border: none;              /* Remove border */
+        padding: 10px 20px;        /* Add padding */
+        text-align: center;        /* Center the text */
+        text-decoration: none;     /* Remove underline */
+        display: inline-block;     /* Inline-block for layout */
+        font-size: 16px;           /* Text size */
+        margin: 4px 2px;           /* Margin */
+        cursor: pointer;           /* Pointer cursor */
+        border-radius: 8px;        /* Rounded corners */
+        transition: background-color 0.3s ease; /* Smooth hover effect */
+    }
     </style>
+
     """,
     unsafe_allow_html=True
 )
