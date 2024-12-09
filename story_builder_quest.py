@@ -223,22 +223,6 @@ def generate_story_segment(topic, age, name, is_last, wikipedia_research, decisi
         is_last = is_last
     )
 
-# def generate_image(prompt):
-#     '''
-#     Create an image based on the input provided.
-
-#     Input: Prompt
-#     Output: url of the image generated
-#     '''
-#     prompt_clean = f"An artistic illustration of: {prompt}"
-#     response = openai.images.generate(
-#         prompt=prompt_clean,
-#         n=1,
-#         size="512x512"  # Size of the generated image
-#     )
-#     image_url = response["data"][0]["url"]
-#     return image_url
-
 MAIN_FLOW = True
 TIME_PER_PROMPT = 2
 # fetch_sidebars()
@@ -318,11 +302,16 @@ if MAIN_FLOW:
             st.button("Continue to the next prompt?")
         elif st.session_state.current_num_prompts == st.session_state.num_prompts:
             st.write("The story is complete!")
-            st.write("Want another story?")
+            st.write("Want to save this story?")
             st.button("Yes.")
             if st.button("No"):
                 st.write("Thanks for writing a story today!")
+                st.session_state.clear()
             else:
+                filename = f"audio_{st.session_state.topic}.mp3"
+                audio_path = gTTS(st.session_state.story)
+                file_path = os.path.join("audio_outputs", filename)
+                audio_path.save(file_path)
                 st.session_state.clear()
         elif st.session_state.current_num_prompts >= 2:
             st.button("Continue to the next prompt?")
