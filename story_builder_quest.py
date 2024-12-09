@@ -54,6 +54,11 @@ st.markdown(
         height: auto;
         border-radius: 8px; /* Optional: rounded corners */
     }
+
+    [data-testid="stSidebar"] {
+        background-color: #191414; /* Green background */
+        color: white; /* White text */
+    }
     </style>
     <div class="logo-container">
         <img src="https://play-lh.googleusercontent.com/Xd1MS1QFXz_yy2SRpfx_DsMNla5ijTyCe5cYjR1bGbZt34aNQKGKYLlkdI2JMekAug" alt="Logo">
@@ -90,7 +95,7 @@ if "is_last" not in st.session_state:
 if "current_num_prompts" not in st.session_state:
     st.session_state["current_num_prompts"] = 1
 if "sidebar_state" not in "st.session_state":
-    st.session_state.sidebar_state = "quest"
+    st.session_state.sidebar_state = None
 
 @st.cache_data
 def speak_text(text):
@@ -229,89 +234,107 @@ TIME_PER_PROMPT = 2
 # Main workflow for story builder quest
 if MAIN_FLOW:
 
-    if st.session_state.show_input:
-        # Input fields
-        topic_input = st.text_input('On what topic do you want a story on?') 
-        age_input = st.text_input('What age is your child?') 
-        story_length_input = st.text_input('How many minutes do you want to spend?')
-        name_of_child = st.text_input('What is the name of your child?')
-        st.session_state.age = age_input
-        st.session_state.length = story_length_input
-        st.session_state.name = name_of_child
-        st.session_state.topic = topic_input
+    # Set up the Sidebars
+    st.sidebar.button("Story Builder Quest")
+    if st.sidebar.button("Saved Stories"):
+        st.session_state.sidebar_state = "saved"
+    else:
+        st.session_state.sidebar_state = "quest"
 
-    ### set up the wikipedia API reader
-        title = chainT.run(st.session_state.topic)
+    # Main Flow    
+    if st.session_state.sidebar_state == "quest":
+        if st.session_state.show_input:
+            # Input fields
+            topic_input = st.text_input('On what topic do you want a story on?') 
+            age_input = st.text_input('What age is your child?') 
+            story_length_input = st.text_input('How many minutes do you want to spend?')
+            name_of_child = st.text_input('What is the name of your child?')
+            st.session_state.age = age_input
+            st.session_state.length = story_length_input
+            st.session_state.name = name_of_child
+            st.session_state.topic = topic_input
 
-    # Generate the beginning of the story
-    if st.session_state.step == 0 and st.session_state.topic and st.session_state.age and st.session_state.name and st.session_state.length:
-        ### set up the number of prompts
-        st.session_state.num_prompts = fetch_num_prompts(length = st.session_state.length, time_per_prompt= TIME_PER_PROMPT )
-        intro = generate_story_segment(
-            topic=st.session_state.topic,
-            age=st.session_state.age,
-            wikipedia_research=fetch_wikipedia_research(st.session_state.topic)
-            , name = st.session_state.name
-            , is_last= st.session_state.is_last
-        )
-        st.session_state.story.append(intro)
-        st.session_state.step += 1
-        st.write(" ".join(st.session_state.story))
-        audio_path = speak_text(intro)
-        # image_url = generate_image(intro)
-        st.write("### Listen to the Story...")
-        st.audio(audio_path, format="audio/mp3")
+        ### set up the wikipedia API reader
+            title = chainT.run(st.session_state.topic)
 
-    if st.session_state.current_num_prompts <= st.session_state.num_prompts and st.session_state.step > 0:
-
-        st.subheader("What happens next?")
-        decision = st.text_input("What happens next?", key=f"response_{st.session_state.step}")
-        st.session_state.current_decision = decision
-        st.session_state.show_input = False
-        
-        if st.session_state.current_num_prompts > 1:
-            st.session_state.current_decision = decision
-
-        # Handle the user's decision
-        if st.session_state.current_decision == '':
-            st.write("Please make a decision to continue the story.")
-        else:
-            st.write(st.session_state.is_last)
-            next_segment = generate_story_segment(
+        # Generate the beginning of the story
+        if st.session_state.step == 0 and st.session_state.topic and st.session_state.age and st.session_state.name and st.session_state.length:
+            ### set up the number of prompts
+            st.session_state.num_prompts = fetch_num_prompts(length = st.session_state.length, time_per_prompt= TIME_PER_PROMPT )
+            intro = generate_story_segment(
                 topic=st.session_state.topic,
                 age=st.session_state.age,
-                decision=decision,
-                wikipedia_research=fetch_wikipedia_research(st.session_state.topic),
-                current_story= " ".join(st.session_state.story)
+                wikipedia_research=fetch_wikipedia_research(st.session_state.topic)
                 , name = st.session_state.name
-                , is_last = st.session_state.is_last
+                , is_last= st.session_state.is_last
             )
-            st.session_state.story.append(next_segment)
-            st.session_state.current_decision = decision
-            st.session_state.current_num_prompts += 1
+            st.session_state.story.append(intro)
             st.session_state.step += 1
-
-
             st.write(" ".join(st.session_state.story))
-            audio_path = speak_text(next_segment)
-            st.write("### Listen to the Next Part of the Story...")
+            audio_path = speak_text(intro)
+            # image_url = generate_image(intro)
+            st.write("### Listen to the Story...")
             st.audio(audio_path, format="audio/mp3")
 
-        if st.session_state.current_num_prompts == st.session_state.num_prompts - 1:
-            st.session_state.is_last = True
-            st.button("Continue to the next prompt?")
-        elif st.session_state.current_num_prompts == st.session_state.num_prompts:
-            st.write("The story is complete!")
-            st.write("Want to save this story?")
-            st.button("Yes.")
-            if st.button("No"):
-                st.write("Thanks for writing a story today!")
-                st.session_state.clear()
+        if st.session_state.current_num_prompts <= st.session_state.num_prompts and st.session_state.step > 0:
+
+            st.subheader("What happens next?")
+            decision = st.text_input("What happens next?", key=f"response_{st.session_state.step}")
+            st.session_state.current_decision = decision
+            st.session_state.show_input = False
+            
+            if st.session_state.current_num_prompts > 1:
+                st.session_state.current_decision = decision
+
+            # Handle the user's decision
+            if st.session_state.current_decision == '':
+                st.write("Please make a decision to continue the story.")
             else:
-                filename = f"audio_{st.session_state.topic}.mp3"
-                audio_path = gTTS(" ".join(st.session_state.story))
-                file_path = os.path.join("audio_outputs", filename)
-                audio_path.save(file_path)
-                st.session_state.clear()
-        elif st.session_state.current_num_prompts > 2:
-            st.button("Continue to the next prompt?")
+                st.write(st.session_state.is_last)
+                next_segment = generate_story_segment(
+                    topic=st.session_state.topic,
+                    age=st.session_state.age,
+                    decision=decision,
+                    wikipedia_research=fetch_wikipedia_research(st.session_state.topic),
+                    current_story= " ".join(st.session_state.story)
+                    , name = st.session_state.name
+                    , is_last = st.session_state.is_last
+                )
+                st.session_state.story.append(next_segment)
+                st.session_state.current_decision = decision
+                st.session_state.current_num_prompts += 1
+                st.session_state.step += 1
+
+
+                st.write(" ".join(st.session_state.story))
+                audio_path = speak_text(next_segment)
+                st.write("### Listen to the Next Part of the Story...")
+                st.audio(audio_path, format="audio/mp3")
+
+            if st.session_state.current_num_prompts == st.session_state.num_prompts - 1:
+                st.session_state.is_last = True
+                st.button("Continue to the next prompt?")
+            elif st.session_state.current_num_prompts == st.session_state.num_prompts:
+                st.write("The story is complete!")
+                st.write("Want to save this story?")
+                st.button("Yes.")
+                if st.button("No"):
+                    st.write("Thanks for writing a story today!")
+                    st.session_state.clear()
+                else:
+                    filename = f"audio_{st.session_state.topic}.mp3"
+                    audio_path = gTTS(" ".join(st.session_state.story))
+                    file_path = os.path.join("audio_outputs", filename)
+                    audio_path.save(file_path)
+                    st.session_state.clear()
+            elif st.session_state.current_num_prompts > 2:
+                st.button("Continue to the next prompt?")
+    elif st.session_state.sidebar_state == "saved":
+        audio_files = [f for f in os.listdir("audio_outputs") if f.endswith('.mp3')]
+        if audio_files:
+            for audio_file in audio_files:
+                file_path = os.path.join("audio_outputs", audio_file)
+                st.write(f"Play: {audio_file}")
+                st.audio(file_path, format="audio/mp3")
+        else:
+            st.write("Create a story in Story Builder Quest!")
