@@ -4,6 +4,13 @@ load_dotenv()
 
 import streamlit as st
 
+from gtts import gTTS
+import tempfile
+import openai
+from PIL import Image
+import requests
+from io import BytesIO
+
 # Set the title using StreamLit
 st.title('Story Builder Quest')
 
@@ -48,7 +55,29 @@ if "is_last" not in st.session_state:
     st.session_state["is_last"] = False
 if "current_num_prompts" not in st.session_state:
     st.session_state["current_num_prompts"] = 1
+if "sidebar_state" not in "st.session_state":
+    st.session_state.sidebar_state = "quest"
 
+@st.cache_data
+def speak_text(text):
+    """
+    Convert text to speech using gTTS and save it as an audio file.
+    
+    Args:
+        text (str): The text to convert into speech.
+        
+    Returns:
+        str: Path to the generated audio file.
+    """
+    # Generate speech
+    tts = gTTS(text=text, lang="en")
+    
+    # Save to a temporary file
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+    temp_file_path = temp_file.name
+    tts.save(temp_file_path)
+    
+    return temp_file_path
 
 # Cache for loading Wikipedia
 @st.cache_data
@@ -63,6 +92,12 @@ def fetch_num_prompts(length, time_per_prompt):
     ''' Function to define the total number of prompts needed for the story.'''
     return round(int(length) / time_per_prompt, 0)
 
+
+# Cache for initial set up of the sidebars
+def fetch_sidebars():
+    st.sidebar.button("Story Builder Quest", key=f"response_{st.session_state.step}")
+    st.sidebar.button("My Stories", key=f"response_{st.session_state.step}")
+    return None
 
 
 from langchain.prompts import PromptTemplate
@@ -154,9 +189,26 @@ def generate_story_segment(topic, age, name, is_last, wikipedia_research, decisi
         is_last = is_last
     )
 
+def generate_image(prompt):
+    '''
+    Create an image based on the input provided.
+
+    Input: Prompt
+    Output: url of the image generated
+    '''
+    prompt_clean = f"An artistic illustration of: {prompt}"
+    response = openai.images.generate(
+        prompt=prompt_clean,
+        n=1,
+        size="512x512"  # Size of the generated image
+    )
+    image_url = response["data"][0]["url"]
+    return image_url
+
 MAIN_FLOW = True
 TIME_PER_PROMPT = 2
-# Main workflow
+# fetch_sidebars()
+# Main workflow for story builder quest
 if MAIN_FLOW:
 
     if st.session_state.show_input:
@@ -187,6 +239,10 @@ if MAIN_FLOW:
         st.session_state.story.append(intro)
         st.session_state.step += 1
         st.write(" ".join(st.session_state.story))
+        audio_path = speak_text(intro)
+        image_url = generate_image(intro)
+        st.write("### Listen to the Story...")
+        st.audio(audio_path, format="audio/mp3")
 
     if st.session_state.current_num_prompts <= st.session_state.num_prompts and st.session_state.step > 0:
 
@@ -216,8 +272,13 @@ if MAIN_FLOW:
             st.session_state.current_decision = decision
             st.session_state.current_num_prompts += 1
             st.session_state.step += 1
+
+
             st.write(" ".join(st.session_state.story))
-   
+            audio_path = speak_text(next_segment)
+            st.write("### Listen to the Next Part of the Story...")
+            st.audio(audio_path, format="audio/mp3")
+
         if st.session_state.current_num_prompts == st.session_state.num_prompts - 1:
             st.session_state.is_last = True
             st.button("Continue to the next prompt?")
