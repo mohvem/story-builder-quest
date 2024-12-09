@@ -4,7 +4,7 @@ Generative AI streamlit app to iteratively tell bed time stories for kids.
 App overview:
 A problem I noticed as an aunt of a 3-year old is that entertaining and engaging young kids can be very challenging, especially as a busy working parent. This inspired to dig deeper to design a streaming solution for parents to keep their kids engaged.
 
-I conducted 20 user interviews to learn more about user preferences and identified user needs that I aimed to solve for with this app. Analyzing this further, narrowed me down into an interactive, audio-only tool that could iteratively create stories based on inputs from the kids. 
+I conducted 20 user interviews to learn more about user preferences and identified user needs that I aimed to solve for with this app. Analyzing this further, narrowed me down into an interactive, audio-only tool that could iteratively create stories based on inputs from the kids. The key insights, product strategy, and GTM strategy is captured in the product pitch PDF.
 
 This app creates the interactive and iterative story-builder and allows the user to save the output. Based on my testing, it seems to do this effectively. 
 
