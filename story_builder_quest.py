@@ -41,6 +41,23 @@ st.markdown(
         border-radius: 8px;        /* Rounded corners */
         transition: background-color 0.3s ease; /* Smooth hover effect */
     }
+
+    <style>
+    .logo-container {
+        position: fixed;
+        top: 10px;
+        right: 10px; /* Adjust 'right' to 'left' if you want it on the left */
+        z-index: 1000; /* Ensure it stays on top */
+    }
+    .logo-container img {
+        width: 100px; /* Adjust size */
+        height: auto;
+        border-radius: 8px; /* Optional: rounded corners */
+    }
+    </style>
+    <div class="logo-container">
+        <img src="https://play-lh.googleusercontent.com/Xd1MS1QFXz_yy2SRpfx_DsMNla5ijTyCe5cYjR1bGbZt34aNQKGKYLlkdI2JMekAug" alt="Logo">
+    </div>
     </style>
 
     """,
@@ -132,7 +149,7 @@ beginning_of_story_template = PromptTemplate(
         "Incorporate engaging details and relevant knowledge from the Wikipedia research: {wikipedia_research}, "
         "to create an imaginative and informative introduction. "
         "The story should set up an engaging scenario, introduce key characters or elements, and establish a sense of curiosity or challenge. "
-        "The main character of the story should be named {name}."
+        "Ensure that the main character in the story is named {name} and guess its gender based on Wikipedia research: {wikipedia_research}."
         "Stop the story just before a major decision point that will decide how the story progresses."
         "Conclude by presenting the decision point clearly, but do not proceed with the resolution or outcome." 
         "Ensure that the output is only 3-5 sentences long. The decision question can be another 1-2 sentences long."
@@ -206,21 +223,21 @@ def generate_story_segment(topic, age, name, is_last, wikipedia_research, decisi
         is_last = is_last
     )
 
-def generate_image(prompt):
-    '''
-    Create an image based on the input provided.
+# def generate_image(prompt):
+#     '''
+#     Create an image based on the input provided.
 
-    Input: Prompt
-    Output: url of the image generated
-    '''
-    prompt_clean = f"An artistic illustration of: {prompt}"
-    response = openai.images.generate(
-        prompt=prompt_clean,
-        n=1,
-        size="512x512"  # Size of the generated image
-    )
-    image_url = response["data"][0]["url"]
-    return image_url
+#     Input: Prompt
+#     Output: url of the image generated
+#     '''
+#     prompt_clean = f"An artistic illustration of: {prompt}"
+#     response = openai.images.generate(
+#         prompt=prompt_clean,
+#         n=1,
+#         size="512x512"  # Size of the generated image
+#     )
+#     image_url = response["data"][0]["url"]
+#     return image_url
 
 MAIN_FLOW = True
 TIME_PER_PROMPT = 2
@@ -257,7 +274,7 @@ if MAIN_FLOW:
         st.session_state.step += 1
         st.write(" ".join(st.session_state.story))
         audio_path = speak_text(intro)
-        image_url = generate_image(intro)
+        # image_url = generate_image(intro)
         st.write("### Listen to the Story...")
         st.audio(audio_path, format="audio/mp3")
 
