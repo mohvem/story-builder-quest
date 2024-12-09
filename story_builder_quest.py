@@ -309,9 +309,9 @@ if MAIN_FLOW:
                 st.session_state.clear()
             else:
                 filename = f"audio_{st.session_state.topic}.mp3"
-                audio_path = gTTS(st.session_state.story)
+                audio_path = gTTS(" ".join(st.session_state.story))
                 file_path = os.path.join("audio_outputs", filename)
                 audio_path.save(file_path)
                 st.session_state.clear()
-        elif st.session_state.current_num_prompts >= 2:
+        elif st.session_state.current_num_prompts > 2:
             st.button("Continue to the next prompt?")
