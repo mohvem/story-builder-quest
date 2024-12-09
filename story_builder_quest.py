@@ -327,6 +327,7 @@ if MAIN_FLOW:
                     file_path = os.path.join("audio_outputs", filename)
                     audio_path.save(file_path)
                     st.session_state.clear()
+                st.session_state.clear()
             elif st.session_state.current_num_prompts > 2:
                 st.button("Continue to the next prompt?")
     elif st.session_state.sidebar_state == "saved":
